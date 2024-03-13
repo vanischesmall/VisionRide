@@ -19,7 +19,7 @@ class ODriver(Node): # Subscriber to <odriver_input>
             1)
         self.timer = self.create_timer(0.01, self.publish_odriver_vel)
         
-        self.odrive = ODriveAPI(invertM0=True, accel=3)
+        self.odrive = ODriveAPI(invertM0=True)
         self.get_logger().info('ODrive connected!')
 
     def parse_odriver_input(self, msg) -> None:

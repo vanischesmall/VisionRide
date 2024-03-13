@@ -8,7 +8,7 @@ from .submodules.Joystick4DOF.jstAPI import JstAPI
 class Jst4DOF(Node): # Publisher to <jst4dof_values>
     def __init__(self) -> object:
         super().__init__('jst4dof')
-        self.publisher = self.create_publisher(String, 'jst4dof_values', 1)
+        self.publisher = self.create_publisher(String, 'jst4dof_values', 10)
         self.timer = self.create_timer(0.01, self.getNpub_values)
         
         self.jst = JstAPI(port = '/dev/ttyUSB0')

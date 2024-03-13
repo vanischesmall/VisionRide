@@ -34,7 +34,7 @@ class Process(Node):
             self.glasses_source_parser,
             1)
         
-        self.odriver_pub = self.create_publisher(String, 'odriver_input', 1)
+        self.odriver_pub = self.create_publisher(String, 'odriver_input', 10)
         self.timer = self.create_timer(0.01, self.publish_odriver_input)
 
         self.odriver_pkg = 'brake 0 0'
@@ -47,7 +47,7 @@ class Process(Node):
         self.mode: bool = False
         self.mode_tmr = time()
 
-        self.vel_lim = 4
+        self.vel_lim = 2
 
         self.bridge = CvBridge()
       
