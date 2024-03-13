@@ -7,8 +7,7 @@ import cv2 as cv
 from time import time
 
 
-
-class Glasses(Node): # Publish to <glasses_source> 
+class Glasses(Node):  # Publish to <glasses_source>
     def __init__(self) -> object:
         super().__init__('glasses')
         self.publisher = self.create_publisher(Image, 'glasses_source', 1)
@@ -23,27 +22,26 @@ class Glasses(Node): # Publish to <glasses_source>
 
     def publish_image(self):
         ret, self.frame = self.cap.read()
-
-        if ret:
+        if not ret:
             pass
 
-        self.put_fps()
-        self.publisher.publish(self.bridge.cv2_to_imgmsg(self.frame))
+        dst = self.put_fps()
+        self.publisher.publish(self.bridge.cv2_to_imgmsg(dst))
 
-    def put_fps(self, src = None):
+    def put_fps(self, src=None) -> int:
         self.fps = int(1 // (time() - self.fps_tmr))
-        img = src if src is not None else self.frame
+        dst = src if src is not None else self.frame
 
-        cv.putText(img, 
-                   str(self.fps), 
-                   (5, img.shape[0]-5), 
-                   cv.FONT_HERSHEY_SIMPLEX, 
-                   0.5, 
-                   (255, 255, 255), 
+        cv.putText(dst,
+                   str(self.fps),
+                   (5, dst.shape[0] - 5),
+                   cv.FONT_HERSHEY_SIMPLEX,
+                   0.5,
+                   (255, 255, 255),
                    1)
         self.fps_tmr = time()
+        return dst
 
-    
 
 def main():
     rclpy.init()
@@ -53,6 +51,7 @@ def main():
     
     glasses.destroy_node()
     rclpy.shutdown()
-    
+
+
 if __name__ == "__main__":
     main()

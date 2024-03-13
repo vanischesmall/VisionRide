@@ -4,13 +4,24 @@ from std_msgs.msg import String
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2 as cv
-
-
 from time import time
+from .submodules.ODriveV36.ODriveAPI import Acceleration
 
 
 class Process(Node):
-    def __init__(self):
+    """
+    Process node that subscribes to joystick and camera topics, 
+    processes the joystick input to control the vehicle, 
+    displays the camera feed, and publishes drive commands.
+
+    Key responsibilities:
+    - Parse joystick input
+    - Map joystick axes to drive commands
+    - Clamp drive speeds
+    - Display camera feed
+    - Publish drive commands
+    """    
+    def __init__(self) -> object:
         super().__init__('process')
         self.jst4dof_sub = self.create_subscription(
             String,
@@ -39,8 +50,8 @@ class Process(Node):
         self.vel_lim = 4
 
         self.bridge = CvBridge()
-        
-    def jst4dof_values_parser(self, msg):
+      
+    def jst4dof_values_parser(self, msg) -> None:
         unpacked_msg = list(map(int, msg.data.split()))
 
         self.jst4dof_pkg['button'] = unpacked_msg[0]
@@ -67,37 +78,43 @@ class Process(Node):
             self.cmd = 'brake' # motor can not move free
             return 
         
-        rotate   = self.map(self.jst4dof_pkg['rotate'], -100, 100, -self.vel_lim, self.vel_lim) * 0.5
-        throttle = self.map(self.jst4dof_pkg['joystY'], -100, 100, -self.vel_lim, self.vel_lim) 
-        turn     = self.map(self.jst4dof_pkg['joystX'], -100, 100, -self.vel_lim, self.vel_lim) * 0.5
+        # rotate   = self.map_(self.jst4dof_pkg['rotate'], -100, 100, -self.vel_lim, self.vel_lim) * 0.5
+        # throttle = self.map_(self.jst4dof_pkg['joystY'], -100, 100, -self.vel_lim, self.vel_lim) 
+        # turn     = self.map_(self.jst4dof_pkg['joystX'], -100, 100, -self.vel_lim, self.vel_lim) * 0.5
+        throttle = self.map_vel(self.jst4dof_pkg['joystY'])
+        rotate   = self.map_vel(self.jst4dof_pkg['joystX']) * 0.5
+        turn     = self.map_vel(self.jst4dof_pkg['rotate']) * 0.5
 
         self.cmd = 'set_vel'
         if throttle < 0: turn *= -1
         self.val_l = round(self.clamp_vel(throttle + turn + rotate), 2)
         self.val_r = round(self.clamp_vel(throttle - turn - rotate), 2)
 
-    def glasses_source_parser(self, src):
+    def glasses_source_parser(self, src) -> None:
+        '''
+        Takes a cv2 image via cv_bridge and displays it
+        '''
         frame = self.bridge.imgmsg_to_cv2(src)
 
-        cv.imshow('frame', frame)
-        cv.waitKey(1)
+        # cv.imshow('frame', frame)
+        # cv.waitKey(1)
 
-    def publish_odriver_input(self):
+    def publish_odriver_input(self) -> None:
+        '''
+        Publishes odriver_pkg to odriver_input topic
+        '''
         msg = String()
         msg.data = f'{self.cmd} {self.val_l} {self.val_r}'
         self.odriver_pub.publish(msg)
 
-    @staticmethod
-    def map(x, in_min, in_max, out_min, out_max) -> float:
+    def map_(x, in_min, in_max, out_min, out_max) -> float:
         return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min
 
-    def clamp_vel(self, vel) -> float:
-        if vel > self.vel_lim:
-            return self.vel_lim
-        elif vel < -self.vel_lim:
-            return -self.vel_lim
-        else:
-            return vel
+    def map_vel(self, vel: float) -> float:
+        return (vel + 100) * (self.vel_lim + self.vel_lim) / (200) - self.vel_lim
+
+    def clamp_vel(self, vel: float) -> float:
+        return self.vel_lim if vel > self.vel_lim else -self.vel_lim if vel < -self.vel_lim else vel
 
         
 def main(args=None):

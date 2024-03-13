@@ -14,11 +14,9 @@ class Jst4DOF(Node): # Publisher to <jst4dof_values>
         self.jst = JstAPI(port = '/dev/ttyUSB0')
 
     def getNpub_values(self) -> None:
-        msg = String()
-        jst_pkg = self.jst.read()
+        msg, jst_pkg = String(), self.jst.read()
         
         msg.data = f'{jst_pkg[0]} {jst_pkg[1]} {jst_pkg[2]} {jst_pkg[3]}'
-        # self.get_logger().info(msg.data)
         self.publisher.publish(msg)
         
 
